@@ -1,0 +1,109 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="3">
+
+        <EditText
+            android:id="@+id/ed_search"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:hint="Search"
+            android:textSize="50dp" />
+
+        <Button
+            android:id="@+id/go_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#aaa"
+            android:text="Go"
+            android:textSize="50dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+
+        <Button
+            android:id="@+id/normalbtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#aaa"
+
+            android:padding="5dp"
+            android:text="Normal"
+            android:textSize="15dp" />
+
+        <Button
+            android:id="@+id/hybridbtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#aaa"
+            android:padding="5dp"
+            android:text="Hybrid"
+            android:textSize="15dp" />
+
+        <Button
+            android:id="@+id/satellitebtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#aaa"
+            android:padding="5dp"
+            android:text="Satellite"
+            android:textSize="15dp" />
+
+        <Button
+            android:id="@+id/terrainbtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#aaa"
+            android:padding="5dp"
+            android:text="Terrain"
+            android:textSize="15dp" />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/mylocationid"
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="My Location" />
+
+    <TextView
+        android:id="@+id/textviewid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    <EditText android:hint="Enter Lattitude"
+        android:id="@+id/idLattitude"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    <EditText android:hint="Enter Longitude"
+        android:id="@+id/idLongitude"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    <Button android:text="Create" android:id="@+id/idCreate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:map="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="com.impact.locationtracker.MapsActivity" />
+
+
+</LinearLayout>
+
