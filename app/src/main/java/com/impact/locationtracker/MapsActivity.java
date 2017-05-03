@@ -27,23 +27,35 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
+    Double first, second, INT_MAX;
+
 
     LatLng temp;
+    private Double tempLat;
+    private Double tempLongi;
+
+
+
+    public Double getTempLat() {
+        return this.tempLat;
+    }
+
+    public Double getTempLongi() {
+        return this.tempLongi;
+    }
 
     public static final LatLng bhaktapur = new LatLng(27.673136, 85.422302);
 
 
     EditText search;
-    Button button, go, normal, hybrid, satellite, terrain,createButton;
+    Button button, go, normal, hybrid, satellite, terrain, createButton, nearestButton, btnDialog;
     TextView textView;
 
 
@@ -55,7 +67,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     MarkerOptions mo;
     Marker marker;
     LocationManager locationManager;
-    EditText editTextLat,editTextLong;
+    EditText editTextLat, editTextLong;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,33 +77,128 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-
-
-        editTextLat= (EditText) findViewById(R.id.idLattitude);
-        editTextLong= (EditText) findViewById(R.id.idLongitude);
-        createButton= (Button) findViewById(R.id.idCreate);
-        createButton.setOnClickListener(new View.OnClickListener() {
+        btnDialog = (Button) findViewById(R.id.id_dialog);
+        btnDialog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String lattitude=editTextLat.getText().toString();
-                String  longitude=editTextLong.getText().toString();
+//                MyDialog myDialog = new MyDialog();
+//                myDialog.show(getSupportFragmentManager(), "my_dialog");
 
-                Double userLattitude=Double.valueOf(lattitude).doubleValue();
-                Double userLongitude=Double.valueOf(longitude).doubleValue();
+                AlertDialog.Builder dBuilder = new AlertDialog.Builder(MapsActivity.this);
+                View dView = getLayoutInflater().inflate(R.layout.dialogbox, null);
+                Button btnConfirm = (Button) dView.findViewById(R.id.saveButton);
+                Button btnCancel = (Button) dView.findViewById(R.id.discardButton);
 
-                mMap.addMarker(new MarkerOptions().position(new LatLng(userLattitude,userLongitude)));
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(userLattitude,userLongitude), 8));
+                TextView latlong=(TextView)dView.findViewById(R.id.id_latlng_textview);
+
+                latlong.setText("your lattitude="+tempLat+"  your Longitude="+tempLongi);
+                dBuilder.setView(dView);
+                final AlertDialog dialog = dBuilder.create();
+                dialog.show();
+                btnConfirm.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        mMap.addMarker(new MarkerOptions().position(temp).icon(BitmapDescriptorFactory.fromResource(R.drawable.start_blue)));
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(temp, 10));
+                        dialog.dismiss();
 
 
 
 
-
-
+                    }
+                });
+                btnCancel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dialog.dismiss();
+                    }
+                });
 
             }
         });
 
+        editTextLat = (EditText) findViewById(R.id.idLattitude);
+        editTextLong = (EditText) findViewById(R.id.idLongitude);
+        createButton = (Button) findViewById(R.id.idCreate);
+        createButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String lattitude = editTextLat.getText().toString();
+                String longitude = editTextLong.getText().toString();
 
+                Double userLattitude = Double.valueOf(lattitude).doubleValue();
+                Double userLongitude = Double.valueOf(longitude).doubleValue();
+
+                mMap.addMarker(new MarkerOptions().position(new LatLng(userLattitude, userLongitude)));
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(userLattitude, userLongitude), 8));
+
+
+            }
+        });
+        nearestButton = (Button) findViewById(R.id.idNearest);
+        nearestButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String[] locationName = new String[]{"bhaktapur", "kathmandu", "patan", "banepa", "jiri"};
+                Double[] lattitude = new Double[]{27.6710, 27.7172, 27.6644, 27.6332, 27.6276};
+                Double[] longitude = new Double[]{85.4298, 85.3240, 85.3188, 85.5277, 86.2260};
+                Double[] distance = new Double[5];
+                try{for (int i = 0; i < locationName.length; i++) {
+//                    double x1,x2,y1,y2,x,y;
+//                            x1=tempLat;
+//                    y1=tempLongi;
+//                    x2=lattitude[i];
+//                    y2=longitude[i];
+//                    x=(x2-x1)*(x2-x1);
+//                    y=(y2-y1)*(y2-y1);
+//                    distance[i]=Math.sqrt(x+y);
+
+
+                    int R = 6371; // km
+                    double x = (longitude[i] - tempLongi) * Math.cos((lattitude[i] + tempLat) / 2);
+                    double y = (lattitude[i] - tempLat);
+                    distance[i] = Math.sqrt(x * x + y * y) * R;
+
+                }}catch(Exception e){
+                    Toast.makeText(MapsActivity.this,"no  location obtained.",Toast.LENGTH_LONG).show();
+
+                }
+                double min1, min2;
+
+
+                min1 = distance[0];
+                min2 = distance[1];
+                if (min2 < min1) {
+                    min1 = distance[1];
+                    min2 = distance[0];
+                }
+
+                for (int i = 2; i < distance.length; i++) {
+                    if (distance[i] < min1) {
+                        min2 = min1;
+                        min1 = distance[i];
+                    } else if (distance[i] < min2) {
+                        min2 = distance[i];
+                    }
+                }
+//                Toast.makeText(MapsActivity.this, "distance is:" + min1, Toast.LENGTH_LONG).show();
+
+
+                for (int i = 0; i < distance.length; i++) {
+                    if (distance[i] == min1 || distance[i] == min2) {
+//                            mMap.addMarker(new MarkerOptions().position(new LatLng(lattitude[i], longitude[i])).title(locationName[i]));
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(temp, 10));
+
+                        PolylineOptions poptiion = new PolylineOptions().add(temp).add(new LatLng(lattitude[i], longitude[i])).width(5).color(Color.BLUE).geodesic(true);
+                        mMap.addPolyline(poptiion);
+
+
+                    }
+                }
+
+
+            }
+        });
 
 
         //start hybrid normal haroooo
@@ -178,7 +285,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     if (location.equals(locationName[i])) {
                         mMap.addMarker(new MarkerOptions().position(new LatLng(lattitude[i], longitude[i])).title(locationName[i]));
-                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lattitude[i], longitude[i]), 8));
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lattitude[i], longitude[i]), 20));
 
 
                         PolylineOptions poptiion = new PolylineOptions().add(temp).add(new LatLng(lattitude[i], longitude[i])).width(5).color(Color.BLUE).geodesic(true);
@@ -216,6 +323,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
 
         marker = mMap.addMarker(mo);
+
+
+        String[] locationName = new String[]{"bhaktapur", "kathmandu", "patan", "banepa", "jiri"};
+        Double[] lattitude = new Double[]{27.6710, 27.7172, 27.6644, 27.6332, 27.6276};
+        Double[] longitude = new Double[]{85.4298, 85.3240, 85.3188, 85.5277, 86.2260};
+        Double[] distance = new Double[5];
+        for (int i = 0; i < locationName.length; i++) {
+
+            mMap.addMarker(new MarkerOptions().position(new LatLng(lattitude[i], longitude[i])).title(locationName[i]));
+
+        }
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
@@ -234,21 +353,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onLocationChanged(final Location location) {
         final LatLng myCoordinates = new LatLng(location.getLatitude(), location.getLongitude());
-        temp=myCoordinates;
+        temp = myCoordinates;
+        tempLat = location.getLatitude();
+        tempLongi = location.getLongitude();
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+//                mMap.addMarker(new MarkerOptions().position(myCoordinates).icon(BitmapDescriptorFactory.fromResource(R.drawable.marker)));
+
 
                 marker.setPosition(myCoordinates);
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myCoordinates,13));
-                textView.setText(location.getLatitude()+"  "+location.getLongitude());
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myCoordinates, 13));
+                textView.setText(location.getLatitude() + "  " + location.getLongitude());
 
             }
         });
 //        PolylineOptions poptiion=new PolylineOptions().add(myCoordinates).add(bhaktapur).add(myCoordinates).width(5).color(Color.BLUE).geodesic(true);
 //        mMap.addPolyline(poptiion);
 //        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(bhaktapur,13));
-
 
 
     }
@@ -267,13 +389,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onProviderDisabled(String s) {
 
     }
+
     private void requestLocation() {
         Criteria criteria = new Criteria();
         criteria.setAccuracy(Criteria.ACCURACY_FINE);
         criteria.setPowerRequirement(Criteria.POWER_HIGH);
         String provider = locationManager.getBestProvider(criteria, true);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         locationManager.requestLocationUpdates(provider, 10000, 10, this);
     }
+
     private boolean isLocationEnabled() {
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
@@ -290,6 +424,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             return false;
         }
     }
+
     private void showAlert(final int status) {
         String message, title, btnText;
         if (status == 1) {
