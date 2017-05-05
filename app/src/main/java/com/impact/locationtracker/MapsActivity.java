@@ -8,7 +8,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
 import android.location.Criteria;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -40,11 +42,12 @@ import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener,DirectionFinderListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener, DirectionFinderListener {
     Double first, second, INT_MAX;
 
 
@@ -60,11 +63,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     LatLng temp;
     private Double tempLat;
     private Double tempLongi;
-
-
-
-
-
 
 
     public static final LatLng bhaktapur = new LatLng(27.673136, 85.422302);
@@ -94,7 +92,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
 
 
-
         btnFindPath = (Button) findViewById(R.id.btnFindPath);
         etOrigin = (EditText) findViewById(R.id.etOrigin);
         etDestination = (EditText) findViewById(R.id.etDestination);
@@ -104,11 +101,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 sendRequest();
             }
         });
-
-
-
-
-
 
 
         btnDialog = (Button) findViewById(R.id.id_dialog);
@@ -325,10 +317,33 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         mMap.addPolyline(poptiion);
 
 
+                    }else{
+                        List<Address> addressList = null;
+                        if (location != null || !location.equals("")) {
+                            Geocoder geocoder = new Geocoder(MapsActivity.this);
+                            try {
+                                addressList = geocoder.getFromLocationName(location, 1);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                Toast.makeText(MapsActivity.this, "no internet", Toast.LENGTH_LONG).show();
+                            }
+                            Address address = addressList.get(0);
+                            LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+                            String longi = String.valueOf(address.getLatitude());
+                            String lat = String.valueOf(address.getLongitude());
+
+
+                            mMap.addMarker(new MarkerOptions().position(latLng).title("LatLong-" + longi + "," + lat));
+
+                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 8));
+
+                        }
+
                     }
 
 
                 }
+
 
 
             }
@@ -368,6 +383,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
         }
     }
+
     @Override
     public void onDirectionFinderStart() {
         progressDialog = ProgressDialog.show(this, "Please wait.",
@@ -386,7 +402,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         if (polylinePaths != null) {
-            for (Polyline polyline:polylinePaths ) {
+            for (Polyline polyline : polylinePaths) {
                 polyline.remove();
             }
         }
@@ -426,10 +442,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-
-
-
-
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -437,9 +449,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         marker = mMap.addMarker(mo);
 
         //................................
-
-
-
 
 
         //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -459,15 +468,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
         //.........................................
-        PolygonOptions rectOptions = new PolygonOptions()
-                .add(new LatLng(25.9, 78.56),
-                        new LatLng(26.8, 89.5),
-                        new LatLng(37.45, -122.2),
-                        new LatLng(37.35, -122.2),
-                        new LatLng( 25.9, 78.56));
+//        PolygonOptions rectOptions = new PolygonOptions()
+//                .add(new LatLng(25.9, 78.56),
+//                        new LatLng(26.8, 89.5),
+//                        new LatLng(37.45, -122.2),
+//                        new LatLng(37.35, -122.2),
+//                        new LatLng(25.9, 78.56));
 
 // Get back the mutable Polygon
-        Polygon polygon = mMap.addPolygon(rectOptions);
+//        Polygon polygon = mMap.addPolygon(rectOptions);
 
         //;;;;;;;;;;;;;;;;;;;
 
@@ -609,4 +618,4 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     //.........................................................................................
-  }
+}
