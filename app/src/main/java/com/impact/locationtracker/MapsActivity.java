@@ -1,7 +1,9 @@
 package com.impact.locationtracker;
+// AIzaSyBaNAoU6RBS_8x0uBveZy4_ZqFRnw2zp4I
 
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -23,18 +25,36 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.cocoahero.android.geojson.GeoJSON;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
+import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener,DirectionFinderListener {
     Double first, second, INT_MAX;
+
+
+    private Button btnFindPath;
+    private EditText etOrigin;
+    private EditText etDestination;
+    private List<Marker> originMarkers = new ArrayList<>();
+    private List<Marker> destinationMarkers = new ArrayList<>();
+    private List<Polyline> polylinePaths = new ArrayList<>();
+    private ProgressDialog progressDialog;
 
 
     LatLng temp;
@@ -43,13 +63,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 
-    public Double getTempLat() {
-        return this.tempLat;
-    }
 
-    public Double getTempLongi() {
-        return this.tempLongi;
-    }
+
+
 
     public static final LatLng bhaktapur = new LatLng(27.673136, 85.422302);
 
@@ -77,6 +93,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+
+
+        btnFindPath = (Button) findViewById(R.id.btnFindPath);
+        etOrigin = (EditText) findViewById(R.id.etOrigin);
+        etDestination = (EditText) findViewById(R.id.etDestination);
+        btnFindPath.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendRequest();
+            }
+        });
+
+
+
+
+
+
+
         btnDialog = (Button) findViewById(R.id.id_dialog);
         btnDialog.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -89,9 +123,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Button btnConfirm = (Button) dView.findViewById(R.id.saveButton);
                 Button btnCancel = (Button) dView.findViewById(R.id.discardButton);
 
-                TextView latlong=(TextView)dView.findViewById(R.id.id_latlng_textview);
+                TextView latlong = (TextView) dView.findViewById(R.id.id_latlng_textview);
 
-                latlong.setText("your lattitude="+tempLat+"  your Longitude="+tempLongi);
+                latlong.setText("your lattitude=" + tempLat + "  your Longitude=" + tempLongi);
                 dBuilder.setView(dView);
                 final AlertDialog dialog = dBuilder.create();
                 dialog.show();
@@ -101,8 +135,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         mMap.addMarker(new MarkerOptions().position(temp).icon(BitmapDescriptorFactory.fromResource(R.drawable.start_blue)));
                         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(temp, 10));
                         dialog.dismiss();
-
-
 
 
                     }
@@ -143,7 +175,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Double[] lattitude = new Double[]{27.6710, 27.7172, 27.6644, 27.6332, 27.6276};
                 Double[] longitude = new Double[]{85.4298, 85.3240, 85.3188, 85.5277, 86.2260};
                 Double[] distance = new Double[5];
-                try{for (int i = 0; i < locationName.length; i++) {
+                try {
+                    for (int i = 0; i < locationName.length; i++) {
 //                    double x1,x2,y1,y2,x,y;
 //                            x1=tempLat;
 //                    y1=tempLongi;
@@ -154,13 +187,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                    distance[i]=Math.sqrt(x+y);
 
 
-                    int R = 6371; // km
-                    double x = (longitude[i] - tempLongi) * Math.cos((lattitude[i] + tempLat) / 2);
-                    double y = (lattitude[i] - tempLat);
-                    distance[i] = Math.sqrt(x * x + y * y) * R;
+                        int R = 6371; // km
+                        double x = (longitude[i] - tempLongi) * Math.cos((lattitude[i] + tempLat) / 2);
+                        double y = (lattitude[i] - tempLat);
+                        distance[i] = Math.sqrt(x * x + y * y) * R;
 
-                }}catch(Exception e){
-                    Toast.makeText(MapsActivity.this,"no  location obtained.",Toast.LENGTH_LONG).show();
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(MapsActivity.this, "no  location obtained.", Toast.LENGTH_LONG).show();
 
                 }
                 double min1, min2;
@@ -210,64 +244,63 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         go = (Button) findViewById(R.id.go_btn);
 
-        normal = (Button) findViewById(R.id.normalbtn);
-
-        hybrid = (Button) findViewById(R.id.hybridbtn);
-
-        satellite = (Button) findViewById(R.id.satellitebtn);
-
-        terrain = (Button) findViewById(R.id.terrainbtn);
-
-        normal.setOnClickListener(new View.OnClickListener()
-
-                                  {
-                                      @Override
-                                      public void onClick(View v) {
-                                          mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-
-                                      }
-                                  }
-
-        );
-        hybrid.setOnClickListener(new View.OnClickListener()
-
-                                  {
-                                      @Override
-                                      public void onClick(View v) {
-                                          mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-
-                                      }
-                                  }
-
-        );
-        satellite.setOnClickListener(new View.OnClickListener()
-
-                                     {
-                                         @Override
-                                         public void onClick(View v) {
-                                             mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
-
-
-                                         }
-                                     }
-
-        );
-
-        terrain.setOnClickListener(new View.OnClickListener()
-
-                                   {
-                                       @Override
-                                       public void onClick(View v) {
-                                           mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
-
-
-                                       }
-                                   }
-
-        );
-
-        //end hybrid normal haru
-
+//        normal = (Button) findViewById(R.id.normalbtn);
+//
+//        hybrid = (Button) findViewById(R.id.hybridbtn);
+//
+//        satellite = (Button) findViewById(R.id.satellitebtn);
+//
+//        terrain = (Button) findViewById(R.id.terrainbtn);
+//
+//        normal.setOnClickListener(new View.OnClickListener()
+//
+//                                  {
+//                                      @Override
+//                                      public void onClick(View v) {
+//                                          mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+//
+//                                      }
+//                                  }
+//
+//        );
+//        hybrid.setOnClickListener(new View.OnClickListener()
+//
+//                                  {
+//                                      @Override
+//                                      public void onClick(View v) {
+//                                          mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+//
+//                                      }
+//                                  }
+//
+//        );
+//        satellite.setOnClickListener(new View.OnClickListener()
+//
+//                                     {
+//                                         @Override
+//                                         public void onClick(View v) {
+//                                             mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+//
+//
+//                                         }
+//                                     }
+//
+//        );
+//
+//        terrain.setOnClickListener(new View.OnClickListener()
+//
+//                                   {
+//                                       @Override
+//                                       public void onClick(View v) {
+//                                           mMap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+//
+//
+//                                       }
+//                                   }
+//
+//        );
+//
+//        //end hybrid normal haru
 
         //start search ko kaam
         go.setOnClickListener(new View.OnClickListener()
@@ -317,12 +350,126 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    private void sendRequest() {
+        String origin = etOrigin.getText().toString();
+        String destination = etDestination.getText().toString();
+        if (origin.isEmpty()) {
+            Toast.makeText(this, "Please enter origin address!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (destination.isEmpty()) {
+            Toast.makeText(this, "Please enter destination address!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            new DirectionFinder(this, origin, destination).execute();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+    @Override
+    public void onDirectionFinderStart() {
+        progressDialog = ProgressDialog.show(this, "Please wait.",
+                "Finding direction..!", true);
+
+        if (originMarkers != null) {
+            for (Marker marker : originMarkers) {
+                marker.remove();
+            }
+        }
+
+        if (destinationMarkers != null) {
+            for (Marker marker : destinationMarkers) {
+                marker.remove();
+            }
+        }
+
+        if (polylinePaths != null) {
+            for (Polyline polyline:polylinePaths ) {
+                polyline.remove();
+            }
+        }
+    }
+
+    @Override
+    public void onDirectionFinderSuccess(List<Route> routes) {
+        progressDialog.dismiss();
+        polylinePaths = new ArrayList<>();
+        originMarkers = new ArrayList<>();
+        destinationMarkers = new ArrayList<>();
+
+        for (Route route : routes) {
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(route.startLocation, 16));
+            ((TextView) findViewById(R.id.tvDuration)).setText(route.duration.text);
+            ((TextView) findViewById(R.id.tvDistance)).setText(route.distance.text);
+
+            originMarkers.add(mMap.addMarker(new MarkerOptions()
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.start_blue))
+                    .title(route.startAddress)
+                    .position(route.startLocation)));
+            destinationMarkers.add(mMap.addMarker(new MarkerOptions()
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.end_green))
+                    .title(route.endAddress)
+                    .position(route.endLocation)));
+
+            PolylineOptions polylineOptions = new PolylineOptions().
+                    geodesic(true).
+                    color(Color.BLUE).
+                    width(10);
+
+            for (int i = 0; i < route.points.size(); i++)
+                polylineOptions.add(route.points.get(i));
+
+            polylinePaths.add(mMap.addPolyline(polylineOptions));
+        }
+    }
+
+
+
+
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
         marker = mMap.addMarker(mo);
+
+        //................................
+
+
+
+
+
+        //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+        //............................................
+
+        LatLng NEWARK = new LatLng(27.6710, 85.4298);
+
+
+        GroundOverlayOptions newarkMap = new GroundOverlayOptions()
+                .image(BitmapDescriptorFactory.fromResource(R.drawable.end_green))
+                .position(NEWARK, 8600f, 6500f);
+        mMap.addGroundOverlay(newarkMap);
+
+
+        //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+        //.........................................
+        PolygonOptions rectOptions = new PolygonOptions()
+                .add(new LatLng(25.9, 78.56),
+                        new LatLng(26.8, 89.5),
+                        new LatLng(37.45, -122.2),
+                        new LatLng(37.35, -122.2),
+                        new LatLng( 25.9, 78.56));
+
+// Get back the mutable Polygon
+        Polygon polygon = mMap.addPolygon(rectOptions);
+
+        //;;;;;;;;;;;;;;;;;;;
 
 
         String[] locationName = new String[]{"bhaktapur", "kathmandu", "patan", "banepa", "jiri"};
@@ -459,4 +606,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 });
         dialog.show();
     }
-}
+
+
+    //.........................................................................................
+  }
